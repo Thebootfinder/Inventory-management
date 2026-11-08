@@ -4,11 +4,21 @@ Application web pensée pour le téléphone : on sait à tout moment ce qu'il re
 
 - **Stock en direct** : chaque ajout ou retrait apparaît instantanément sur tous les téléphones connectés.
 - **Ajouter / retirer** en un geste avec les boutons − et + de chaque article.
-- **Scan de code-barres** avec la caméra : mode *Entrée +1*, *Sortie −1* (scan en continu) ou *Fiche*.
-  Un code inconnu ouvre la création d'article, avec le nom pré-rempli via Open Food Facts quand le produit y est référencé.
+- **Scan de code-barres** avec la caméra : le produit scanné s'affiche avec une quantité modifiable,
+  et rien ne bouge tant qu'on n'a pas appuyé sur **Ajouter** ou **Retirer**.
+- **Regroupement par article** : « Jus de pomme » peut contenir plusieurs marques, chacune avec son code-barres
+  et sa quantité. L'alerte porte sur le total ; un clic sur l'article montre le détail par marque.
+- **Code inconnu** : on le range dans un article existant (suggestions automatiques) ou on crée un article,
+  avec nom et photo pré-remplis via Open Food Facts quand le produit y est référencé.
+  Une fois nommé, le code est reconnu à chaque scan.
 - **Alertes** : chaque article a un seuil minimum. En dessous, il passe en « Stock bas » ou « Rupture »
   et rejoint la liste **À racheter**, partageable en un clic (SMS, WhatsApp, notes…).
 - **Hors-ligne** : au fond du cellier sans réseau, les modifications sont gardées et envoyées au retour de la connexion.
+- **Courses** : les articles sous leur seuil forment la liste (on peut en ajouter d'autres). Au magasin, on coche
+  ce qu'on achète, on ajuste la quantité et la marque, puis « Ranger en stock » met tout à jour d'un coup.
+- **Historique** : chaque entrée et sortie est enregistrée (qui, quoi, quand, comment). Graphique de consommation
+  sur 6 mois, top des articles consommés du mois, journal filtrable, et derniers mouvements dans chaque fiche article.
+- **Sauvegarde** : export / restauration de l'inventaire dans un fichier (onglet Réglages).
 - **Installable** sur l'écran d'accueil (PWA), thème clair/sombre automatique.
 
 ## Stack

@@ -18,9 +18,17 @@ service cloud.firestore {
       allow create, update: if isHousehold()
         && request.resource.data.name is string
         && request.resource.data.name.size() > 0
-        && request.resource.data.quantity is number
         && request.resource.data.target is number;
       allow delete: if isHousehold();
+    }
+
+    // Historique : on peut ajouter des lignes, jamais les modifier.
+    match /movements/{movementId} {
+      allow read: if isHousehold();
+      allow create: if isHousehold()
+        && request.resource.data.delta is number
+        && request.resource.data.uid == request.auth.uid;
+      allow update, delete: if false;
     }
   }
 }
