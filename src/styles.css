@@ -1130,3 +1130,257 @@ button.stat:active {
     transition: none !important;
   }
 }
+
+/* ---------- Références (marques) ---------- */
+.pill.refs {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.row-qty.total {
+  gap: 4px;
+  padding: 0 4px 0 8px;
+  color: var(--muted);
+}
+.quick-target {
+  display: grid;
+  text-align: center;
+  font-size: 12px;
+  padding: 0 6px;
+}
+.quick-target strong {
+  font-size: 20px;
+}
+.group-title {
+  font-size: 15px;
+  font-weight: 700;
+  margin-top: 4px;
+}
+.variants {
+  display: grid;
+  gap: 10px;
+}
+.variants-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  font-size: 13px;
+}
+.variants ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+.variant {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 8px 8px 10px;
+  border-radius: 14px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+}
+.variant-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-align: left;
+}
+.variant-name {
+  font-weight: 600;
+  font-size: 15px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mono {
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: 12px;
+}
+.ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 14px;
+}
+.qty-btn.sm {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+}
+.qty.sm {
+  min-width: 34px;
+}
+.qty.sm strong {
+  font-size: 17px;
+}
+.variant-form {
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  border-radius: 14px;
+  background: var(--surface);
+  border: 1px solid var(--accent);
+}
+.variant-form > input {
+  height: 44px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--bg);
+  font-size: 16px;
+  outline: 0;
+  min-width: 0;
+}
+.variant-form-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+.add-ref {
+  justify-self: start;
+}
+
+/* ---------- Fiche de validation du scan ---------- */
+.scan-title {
+  height: 44px;
+  padding: 0 16px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  font-weight: 650;
+}
+.scan-frame.paused span {
+  border-color: rgb(255 255 255 / 0.35);
+}
+.scan-card {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 5;
+  margin: 0 auto;
+  max-width: 560px;
+  max-height: 88dvh;
+  overflow-y: auto;
+  display: grid;
+  gap: 14px;
+  padding: 18px 18px calc(18px + var(--safe-b));
+  border-radius: 24px 24px 0 0;
+  background: var(--bg);
+  color: var(--text);
+  animation: up 0.24s cubic-bezier(0.2, 0.9, 0.3, 1);
+}
+.scan-card.tall {
+  height: 80dvh;
+  grid-template-rows: auto auto auto 1fr;
+}
+.scan-card-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.scan-card-name {
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+.scan-card-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.scan-card-title .icon-btn svg {
+  transform: rotate(180deg);
+}
+.scan-card-title h3 {
+  font-size: 18px;
+}
+.scan-card-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.scan-card-actions.col {
+  grid-template-columns: 1fr;
+}
+.scan-card-actions .btn {
+  height: 58px;
+  font-size: 17px;
+}
+.in-btn {
+  background: var(--in);
+  color: #fff;
+}
+.out-btn {
+  background: var(--accent);
+  color: #fff;
+}
+.btn.full {
+  width: 100%;
+  height: 46px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.scan-card .hint {
+  margin: 0;
+  line-height: 1.45;
+}
+.scan-card a {
+  color: var(--accent);
+  font-weight: 600;
+}
+.pick-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  display: grid;
+  align-content: start;
+  gap: 6px;
+}
+.pick-list button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  text-align: left;
+}
+.pick-name {
+  flex: 1;
+  min-width: 0;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pick-empty {
+  padding: 12px;
+  text-align: center;
+}
+
+/* ---------- Sauvegarde ---------- */
+.backup {
+  display: grid;
+  gap: 8px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+.backup-title {
+  font-weight: 700;
+  font-size: 13px;
+}
+.backup-actions {
+  display: flex;
+  gap: 8px;
+}
+.backup-actions .btn {
+  flex: 1;
+}

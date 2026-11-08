@@ -18,7 +18,6 @@ service cloud.firestore {
       allow create, update: if isHousehold()
         && request.resource.data.name is string
         && request.resource.data.name.size() > 0
-        && request.resource.data.quantity is number
         && request.resource.data.target is number;
       allow delete: if isHousehold();
     }

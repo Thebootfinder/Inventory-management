@@ -99,7 +99,10 @@ export async function startScanner(
 }
 
 export interface ProductInfo {
+  /** Nom précis avec la marque, ex. « Pago · Jus de pomme · 1 L ». */
   name?: string;
+  /** Nom générique, ex. « Jus de pomme », pour regrouper les marques. */
+  generic?: string;
   imageUrl?: string;
   category?: string;
 }
@@ -111,7 +114,7 @@ export async function lookupProduct(barcode: string): Promise<ProductInfo | null
   const timer = setTimeout(() => ctrl.abort(), 5000);
   try {
     const res = await fetch(
-      `https://world.openfoodfacts.org/api/v2/product/${barcode}.json?fields=product_name,product_name_fr,brands,quantity,image_front_small_url,categories_tags`,
+      `https://world.openfoodfacts.org/api/v2/product/${barcode}.json?fields=product_name,product_name_fr,generic_name,generic_name_fr,brands,quantity,image_front_small_url,categories_tags`,
       { signal: ctrl.signal },
     );
     if (!res.ok) return null;
@@ -124,7 +127,12 @@ export async function lookupProduct(barcode: string): Promise<ProductInfo | null
     const name = [brand && !base.toLowerCase().includes(brand.toLowerCase()) ? brand : '', base, qty]
       .filter(Boolean)
       .join(' · ');
-    return { name: name || undefined, imageUrl: p.image_front_small_url || undefined, category: guessCategory(p.categories_tags) };
+    const generic = (p.generic_name_fr || p.generic_name || '').trim();
+    return {
+      name: name || undefined,
+      generic: generic && generic.length < 40 ? generic.charAt(0).toUpperCase() + generic.slice(1) : undefined,
+      imageUrl: p.image_front_small_url || undefined, category: guessCategory(p.categories_tags),
+    };
   } catch {
     return null;
   } finally {

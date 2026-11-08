@@ -1,13 +1,16 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { store, type User } from './store';
-import { stockLevel, type Item, type ItemInput } from './types';
+import { requestPersistentStorage } from './store/local';
+import { itemImage, stockLevel, type Item, type ItemInput, type ItemPatch, type Variant } from './types';
+import type { ProductInfo } from './scanner';
 import { Icon, ItemThumb } from './components/Icon';
 import { ItemRow } from './components/ItemRow';
-import { ItemSheet } from './components/ItemSheet';
-import { ScanView, type ScanMode } from './components/ScanView';
+import { ItemSheet, type NewDraft } from './components/ItemSheet';
+import { ScanView } from './components/ScanView';
+import { BackupPanel } from './components/BackupPanel';
 
 type View = 'stock' | 'alerts';
-type Panel = { kind: 'new'; barcode?: string } | { kind: 'edit'; id: string } | { kind: 'scan' } | null;
+type Panel = { kind: 'new'; draft?: NewDraft } | { kind: 'edit'; id: string } | { kind: 'scan' } | null;
 interface Toast {
   id: number;
   text: string;
@@ -26,10 +29,12 @@ export default function App() {
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState<string>('Tout');
   const [panel, setPanel] = useState<Panel>(null);
-  const [scanMode, setScanMode] = useState<ScanMode>('out');
   const [toast, setToast] = useState<Toast | null>(null);
 
   useEffect(() => store.onUser(setUser), []);
+  useEffect(() => {
+    if (store.mode === 'local') requestPersistentStorage();
+  }, []);
 
   useEffect(() => {
     if (!user) return;
@@ -87,16 +92,19 @@ export default function App() {
     return sorted.filter(
       (i) =>
         (category === 'Tout' || i.category === category) &&
-        (!q || normalize(`${i.name} ${i.location ?? ''} ${i.category}`).includes(q) || i.barcode === query.trim()),
+        (!q ||
+          normalize(`${i.name} ${i.location ?? ''} ${i.category} ${i.variants.map((v) => v.label).join(' ')}`).includes(q) ||
+          i.variants.some((v) => v.barcode === query.trim())),
     );
   }, [sorted, query, category]);
 
   const totalUnits = all.reduce((n, i) => n + i.quantity, 0);
 
   const adjust = useCallback(
-    (item: Item, delta: number) => {
-      if (delta < 0 && item.quantity + delta < 0) return;
-      store.adjust(item.id, delta).catch(fail);
+    (item: Item, variantId: string, delta: number) => {
+      const variant = item.variants.find((v) => v.id === variantId);
+      if (!variant || (delta < 0 && variant.quantity + delta < 0)) return;
+      store.adjust(item, variantId, delta).catch(fail);
       const next = item.quantity + delta;
       if (delta < 0 && item.target > 0 && next < item.target && item.quantity >= item.target) {
         notify(next === 0 ? `${item.name} : rupture de stock` : `${item.name} passe sous le seuil (${next}/${item.target})`);
@@ -105,22 +113,26 @@ export default function App() {
     [fail, notify],
   );
 
-  const save = async (input: ItemInput) => {
-    if (panel?.kind === 'edit') {
-      await store.update(panel.id, input).catch(fail);
-      notify('Article mis à jour');
-    } else {
-      await store.create(input).catch(fail);
-      notify(`${input.name} ajouté`);
-    }
+  const create = async (input: ItemInput) => {
+    await store.create(input).catch(fail);
+    notify(`${input.name} ajouté`);
+    setPanel(null);
+  };
+
+  const update = async (id: string, patch: ItemPatch) => {
+    await store.update(id, patch).catch(fail);
+    notify('Article mis à jour');
     setPanel(null);
   };
 
   const remove = async (item: Item) => {
     setPanel(null);
     await store.remove(item.id).catch(fail);
-    const { id: _id, updatedAt: _u, ...rest } = item;
-    notify(`${item.name} supprimé`, { label: 'Annuler', run: () => store.create(rest).catch(fail) });
+    const { name, category, location, target, unit, variants } = item;
+    notify(`${item.name} supprimé`, {
+      label: 'Annuler',
+      run: () => store.create({ name, category, location, target, unit, variants }).catch(fail),
+    });
   };
 
   const shareList = async () => {
@@ -151,7 +163,7 @@ export default function App() {
             <p className="eyebrow">Inventaire</p>
             <h1>Cellier</h1>
           </div>
-          <SyncBadge mode={store.mode} online={online} user={user} />
+          <SyncBadge mode={store.mode} online={online} user={user} items={all} notify={notify} />
         </div>
 
         <div className="stats">
@@ -213,7 +225,7 @@ export default function App() {
             ) : visible.length ? (
               <ul className="list">
                 {visible.map((item) => (
-                  <ItemRow key={item.id} item={item} onOpen={() => setPanel({ kind: 'edit', id: item.id })} onAdjust={(d) => adjust(item, d)} />
+                  <ItemRow key={item.id} item={item} onOpen={() => setPanel({ kind: 'edit', id: item.id })} onAdjust={(d) => adjust(item, item.variants[0].id, d)} />
                 ))}
               </ul>
             ) : all.length ? (
@@ -245,7 +257,7 @@ export default function App() {
                 {alerts.map((i) => (
                   <li key={i.id} className={`row level-${stockLevel(i)}`}>
                     <button className="row-main" onClick={() => setPanel({ kind: 'edit', id: i.id })}>
-                      <ItemThumb category={i.category} imageUrl={i.imageUrl} />
+                      <ItemThumb category={i.category} imageUrl={itemImage(i)} />
                       <div className="row-text">
                         <div className="row-name">{i.name}</div>
                         <div className="row-meta">
@@ -288,30 +300,29 @@ export default function App() {
       {panel?.kind === 'scan' && (
         <ScanView
           items={all}
-          initialMode={scanMode}
-          onClose={(m) => {
-            setScanMode(m);
-            setPanel(null);
-          }}
+          onClose={() => setPanel(null)}
           onAdjust={adjust}
-          onFound={(item) => setPanel({ kind: 'edit', id: item.id })}
-          onUnknown={(code) => {
-            setPanel({ kind: 'new', barcode: code });
-          }}
+          onOpen={(item) => setPanel({ kind: 'edit', id: item.id })}
+          onCreate={(barcode: string, info: ProductInfo | null | undefined) => setPanel({ kind: 'new', draft: { barcode, info } })}
+          onAddVariant={(item: Item, v: Variant) => store.addVariant(item, v).catch(fail)}
         />
       )}
 
       {(panel?.kind === 'new' || editing) && (
         <ItemSheet
-          key={panel?.kind === 'edit' ? panel.id : `new-${panel?.kind === 'new' ? panel.barcode : ''}`}
+          key={panel?.kind === 'edit' ? panel.id : `new-${panel?.kind === 'new' ? panel.draft?.barcode : ''}`}
           item={editing}
-          barcode={panel?.kind === 'new' ? panel.barcode : undefined}
+          draft={panel?.kind === 'new' ? panel.draft : undefined}
           categories={categories}
           locations={locations}
           onClose={() => setPanel(null)}
-          onSave={save}
+          onCreate={create}
+          onUpdate={(patch) => update(editing!.id, patch)}
           onDelete={editing ? () => remove(editing) : undefined}
-          onAdjust={editing ? (d) => adjust(editing, d) : undefined}
+          onAdjust={editing ? (vid, d) => adjust(editing, vid, d) : undefined}
+          onAddVariant={editing ? (v) => store.addVariant(editing, v).catch(fail) : undefined}
+          onUpdateVariant={editing ? (vid, p) => store.updateVariant(editing, vid, p).catch(fail) : undefined}
+          onRemoveVariant={editing ? (vid) => store.removeVariant(editing, vid).catch(fail) : undefined}
         />
       )}
 
@@ -334,7 +345,19 @@ export default function App() {
   );
 }
 
-function SyncBadge({ mode, online, user }: { mode: 'cloud' | 'local'; online: boolean; user: User }) {
+function SyncBadge({
+  mode,
+  online,
+  user,
+  items,
+  notify,
+}: {
+  mode: 'cloud' | 'local';
+  online: boolean;
+  user: User;
+  items: Item[];
+  notify: (text: string) => void;
+}) {
   const [open, setOpen] = useState(false);
   const label = mode === 'local' ? 'Local' : online ? 'Synchro' : 'Hors-ligne';
   return (
@@ -344,7 +367,7 @@ function SyncBadge({ mode, online, user }: { mode: 'cloud' | 'local'; online: bo
         {label}
       </button>
       {open && (
-        <div className="sync-pop" onClick={() => setOpen(false)}>
+        <div className="sync-pop">
           <p>
             {mode === 'local'
               ? 'Données enregistrées sur ce téléphone uniquement.'
@@ -357,6 +380,14 @@ function SyncBadge({ mode, online, user }: { mode: 'cloud' | 'local'; online: bo
               <Icon name="logout" size={16} /> Déconnexion ({user.email ?? user.name})
             </button>
           )}
+          <BackupPanel
+            items={items}
+            replaces={mode === 'local'}
+            onDone={(text) => {
+              notify(text);
+              setOpen(false);
+            }}
+          />
         </div>
       )}
     </div>
