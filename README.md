@@ -14,7 +14,7 @@ Application web pensée pour le téléphone : on sait à tout moment ce qu'il re
 ## Stack
 
 React + TypeScript + Vite, Firebase (Firestore pour la synchro temps réel, connexion Google pour la sécurité),
-ZXing / BarcodeDetector pour le scan. Hébergement statique sur GitHub Pages.
+ZXing / BarcodeDetector pour le scan. Hébergement statique gratuit sur Vercel.
 
 Sans configuration Firebase, l'app fonctionne en **mode local** (données sur l'appareil uniquement), pratique pour essayer.
 
@@ -26,23 +26,24 @@ npm run dev        # http://localhost:5173 (et l'adresse réseau pour tester sur
 ```
 
 > La caméra n'est autorisée par les navigateurs qu'en HTTPS (ou sur localhost). Pour scanner depuis le téléphone,
-> utilisez la version déployée sur GitHub Pages.
+> utilisez la version déployée sur Vercel.
 
 ## Activer la synchro entre téléphones (Firebase, gratuit)
 
 1. Créez un projet sur <https://console.firebase.google.com> (offre gratuite *Spark* suffisante).
 2. **Firestore Database** › Créer une base (mode production, région `eur3`).
 3. **Authentication** › Méthode de connexion › activez **Google**.
-   Dans *Paramètres › Domaines autorisés*, ajoutez `thebootfinder.github.io`.
+   Dans *Paramètres › Domaines autorisés*, ajoutez l'adresse Vercel de l'app (ex. `inventory-management.vercel.app`).
 4. **Paramètres du projet** › *Vos applications* › ajoutez une app Web et copiez la config.
 5. Dans `firestore.rules`, remplacez `votre.adresse@gmail.com` par les comptes Google de la maison,
    puis collez le fichier dans *Firestore › Règles* et publiez.
 6. En local : copiez `.env.example` en `.env.local` et remplissez les valeurs.
-   Pour le déploiement : ajoutez les mêmes clés dans GitHub › *Settings › Secrets and variables › Actions › Variables*.
+   Pour le déploiement : ajoutez les mêmes clés dans Vercel › *Project › Settings › Environment Variables*, puis redéployez.
 
-## Déploiement
+## Déploiement (Vercel, gratuit)
 
-GitHub › *Settings › Pages* › Source : **GitHub Actions**. Chaque push sur `main` publie l'app sur
-<https://thebootfinder.github.io/inventory-management/>.
+1. Connectez-vous sur <https://vercel.com> avec votre compte GitHub.
+2. *Add New › Project* › importez `Thebootfinder/Inventory-management` (Vercel détecte Vite tout seul).
+3. *Deploy*. Chaque merge sur `main` met ensuite l'app à jour automatiquement.
 
-Sur le téléphone : ouvrez l'adresse, puis *Partager › Sur l'écran d'accueil* (iPhone) ou *Installer l'application* (Android).
+Sur le téléphone : ouvrez l'adresse `…vercel.app`, puis *Partager › Sur l'écran d'accueil* (iPhone) ou *Installer l'application* (Android).
