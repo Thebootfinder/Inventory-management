@@ -1576,6 +1576,7 @@ button.stat:active {
   color: var(--in);
 }
 .top-list {
+  grid-template-columns: minmax(0, 1fr);
   margin: 0;
   padding: 0 0 0 20px;
   display: grid;
@@ -1685,4 +1686,74 @@ button.stat:active {
 }
 .mv {
   min-width: 0;
+}
+
+/* ---------- Pas de défilement horizontal, jamais ----------
+   Par défaut, un élément de grille ou de flex ne rétrécit pas sous la largeur de son contenu :
+   un nom long ou une ligne « nowrap » élargit alors tout l'écran. On force les colonnes uniques
+   à la largeur disponible, et le texte s'ellipse à la place. */
+.sheet-body,
+.scan-card,
+.pick-list,
+.variants,
+.variants ul,
+.variant-form,
+.card,
+.picker,
+.shop-row,
+.field,
+.backup,
+.toolbar {
+  grid-template-columns: minmax(0, 1fr);
+}
+.variant,
+.variant-main,
+.mv,
+.shop-main,
+.shop-text,
+.scan-card-head,
+.quick,
+.pick-list button,
+.row-text,
+.quick-qty {
+  min-width: 0;
+}
+.sheet-body,
+.scan-card {
+  overflow-x: hidden;
+}
+.scan-card-name,
+.sheet-head h2 {
+  overflow-wrap: anywhere;
+}
+.sheet-head h2 {
+  min-width: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.sheet-head .icon-btn {
+  flex: none;
+}
+html,
+body {
+  overflow-x: clip;
+}
+.top-list li {
+  display: flex;
+  gap: 10px;
+}
+.top-list li span {
+  flex: 1;
+  min-width: 0;
+  max-width: none;
+}
+.top-list li b {
+  float: none;
+  flex: none;
+}
+.scan-card .row-meta {
+  flex-wrap: wrap;
+  white-space: normal;
 }
