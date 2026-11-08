@@ -1,0 +1,26 @@
+rules_version = '2';
+
+// Seules les adresses listées ici peuvent lire et modifier l'inventaire.
+// Remplacez par les comptes Google de la maison, puis publiez :
+//   Console Firebase > Firestore > Règles  (ou `firebase deploy --only firestore:rules`)
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isHousehold() {
+      return request.auth != null
+        && request.auth.token.email_verified == true
+        && request.auth.token.email in [
+          'votre.adresse@gmail.com'
+        ];
+    }
+
+    match /items/{itemId} {
+      allow read: if isHousehold();
+      allow create, update: if isHousehold()
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0
+        && request.resource.data.quantity is number
+        && request.resource.data.target is number;
+      allow delete: if isHousehold();
+    }
+  }
+}
