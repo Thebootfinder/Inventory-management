@@ -14,7 +14,11 @@ Application web pensée pour le téléphone : on sait à tout moment ce qu'il re
 - **Alertes** : chaque article a un seuil minimum. En dessous, il passe en « Stock bas » ou « Rupture »
   et rejoint la liste **À racheter**, partageable en un clic (SMS, WhatsApp, notes…).
 - **Hors-ligne** : au fond du cellier sans réseau, les modifications sont gardées et envoyées au retour de la connexion.
-- **Sauvegarde** : export / restauration de l'inventaire dans un fichier (menu du badge en haut à droite).
+- **Courses** : les articles sous leur seuil forment la liste (on peut en ajouter d'autres). Au magasin, on coche
+  ce qu'on achète, on ajuste la quantité et la marque, puis « Ranger en stock » met tout à jour d'un coup.
+- **Historique** : chaque entrée et sortie est enregistrée (qui, quoi, quand, comment). Graphique de consommation
+  sur 6 mois, top des articles consommés du mois, journal filtrable, et derniers mouvements dans chaque fiche article.
+- **Sauvegarde** : export / restauration de l'inventaire dans un fichier (onglet Réglages).
 - **Installable** sur l'écran d'accueil (PWA), thème clair/sombre automatique.
 
 ## Stack

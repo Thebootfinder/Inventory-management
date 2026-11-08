@@ -15,14 +15,17 @@ import {
   doc,
   increment,
   initializeFirestore,
+  limit,
   onSnapshot,
+  orderBy,
+  query,
   persistentLocalCache,
   persistentMultipleTabManager,
   serverTimestamp,
   updateDoc,
   type Timestamp,
 } from 'firebase/firestore';
-import { fromLegacy, sortVariants, totalOf, type Item, type ItemInput, type Variant } from '../types';
+import { fromLegacy, sortVariants, totalOf, type Item, type ItemInput, type Movement, type Variant } from '../types';
 import type { InventoryStore } from './types';
 
 export interface FirebaseConfig {
@@ -56,6 +59,7 @@ export function createFirebaseStore(config: FirebaseConfig): InventoryStore {
     localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
   });
   const items = collection(db, 'items');
+  const movements = collection(db, 'movements');
   const ref = (id: string) => doc(items, id);
 
   /** Convertit un document de l'ancien format avant d'y toucher. */
@@ -164,6 +168,21 @@ export function createFirebaseStore(config: FirebaseConfig): InventoryStore {
     async removeVariant(item, variantId) {
       await migrate(item);
       await updateDoc(ref(item.id), { [`variants.${variantId}`]: deleteField(), updatedAt: serverTimestamp() });
+    },
+    async logMovement(m) {
+      const u = auth.currentUser;
+      await addDoc(movements, {
+        ...clean(m),
+        at: Date.now(),
+        by: u?.displayName?.split(' ')[0] ?? u?.email ?? 'Inconnu',
+        uid: u?.uid ?? null,
+      });
+    },
+    subscribeHistory(cb) {
+      // Les 2000 derniers mouvements suffisent pour l'écran et les stats sur plusieurs mois.
+      return onSnapshot(query(movements, orderBy('at', 'desc'), limit(2000)), (snap) =>
+        cb(snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<Movement, 'id'>) }))),
+      );
     },
     async importItems(list) {
       for (const input of list) await this.create(input);

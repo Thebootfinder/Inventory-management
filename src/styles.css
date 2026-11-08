@@ -613,9 +613,9 @@ button.stat:active {
   width: 100%;
   max-width: 560px;
   height: calc(var(--tabbar-h) + var(--safe-b));
-  padding: 0 24px var(--safe-b);
+  padding: 0 8px var(--safe-b);
   display: grid;
-  grid-template-columns: 1fr auto 1fr;
+  grid-template-columns: 1fr 1fr auto 1fr 1fr;
   align-items: center;
   background: color-mix(in srgb, var(--surface) 82%, transparent);
   backdrop-filter: blur(18px) saturate(1.6);
@@ -627,7 +627,7 @@ button.stat:active {
   display: grid;
   justify-items: center;
   gap: 3px;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
   color: var(--muted);
 }
@@ -652,8 +652,10 @@ button.stat:active {
   text-align: center;
 }
 .fab {
-  width: 68px;
-  height: 68px;
+  width: 64px;
+  height: 64px;
+  margin-left: 4px;
+  margin-right: 4px;
   margin-top: -30px;
   border-radius: 24px;
   display: grid;
@@ -1383,4 +1385,304 @@ button.stat:active {
 }
 .backup-actions .btn {
   flex: 1;
+}
+
+/* ---------- Cartes génériques ---------- */
+.card {
+  padding: 16px;
+  border-radius: var(--radius);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  display: grid;
+  gap: 10px;
+  margin-bottom: 12px;
+  font-size: 14px;
+  line-height: 1.45;
+}
+.card .backup {
+  border-top: 0;
+  padding-top: 0;
+}
+.small {
+  font-size: 13px;
+  margin-top: 2px;
+}
+.settings .section-head,
+.history .section-head,
+.shopping .section-head {
+  margin-top: 8px;
+}
+
+/* ---------- Courses ---------- */
+.shop-row {
+  border-radius: var(--radius);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  padding: 10px;
+  display: grid;
+  gap: 10px;
+  transition: background 0.15s;
+}
+.shop-row.done {
+  border-color: color-mix(in srgb, var(--in) 50%, var(--line));
+  background: color-mix(in srgb, var(--in) 8%, var(--surface));
+}
+.shop-main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.check {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  border: 2px solid var(--line);
+  display: grid;
+  place-items: center;
+  color: #fff;
+}
+.check.on {
+  background: var(--in);
+  border-color: var(--in);
+}
+.shop-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-align: left;
+}
+.shop-row.done .row-name {
+  text-decoration: line-through;
+  color: var(--muted);
+}
+.shop-line {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-left: 42px;
+  font-size: 13px;
+}
+.shop-line .stepper {
+  height: 40px;
+  width: 140px;
+}
+.shop-line .stepper button {
+  width: 40px;
+}
+.shop-line select {
+  flex: 1;
+  min-width: 0;
+  height: 40px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--bg);
+  padding: 0 8px;
+}
+.picker {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+.picker .pick-list {
+  max-height: 300px;
+}
+.shopping > .add-ref {
+  margin-top: 12px;
+}
+.restock-bar {
+  position: sticky;
+  bottom: calc(var(--tabbar-h) + var(--safe-b) + 16px);
+  margin-top: 16px;
+  z-index: 5;
+}
+.wide-btn {
+  width: 100%;
+  box-shadow: var(--shadow);
+}
+
+/* ---------- Historique ---------- */
+.chart-card {
+  gap: 14px;
+}
+.chart-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+.chart-head strong {
+  text-transform: capitalize;
+}
+.chart {
+  height: 120px;
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 8px;
+  align-items: end;
+}
+.chart-col {
+  height: 100%;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  justify-items: center;
+  align-items: end;
+  gap: 4px;
+}
+.chart-bar {
+  width: 100%;
+  max-width: 36px;
+  border-radius: 8px 8px 4px 4px;
+  background: var(--surface-2);
+  transition: background 0.15s;
+}
+.chart-col.on .chart-bar {
+  background: var(--accent);
+}
+.chart-val {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted);
+  min-height: 14px;
+}
+.chart-lbl {
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: capitalize;
+}
+.chart-col.on .chart-lbl {
+  color: var(--text);
+  font-weight: 700;
+}
+.month-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.month-stats > div {
+  display: grid;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--surface-2);
+}
+.month-stats strong {
+  font-size: 22px;
+}
+.out-text {
+  color: var(--accent);
+}
+.in-text {
+  color: var(--in);
+}
+.top-list {
+  margin: 0;
+  padding: 0 0 0 20px;
+  display: grid;
+  gap: 4px;
+}
+.top-list li span {
+  display: inline-block;
+  max-width: calc(100% - 40px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: bottom;
+}
+.top-list li b {
+  float: right;
+}
+.history > .chips {
+  margin: 4px 0 6px;
+}
+.day h4 {
+  margin: 16px 2px 8px;
+  font-size: 13px;
+  color: var(--muted);
+  text-transform: capitalize;
+}
+.day ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+.mv {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+}
+.mv-delta {
+  flex: none;
+  min-width: 44px;
+  text-align: center;
+  padding: 6px 0;
+  border-radius: 10px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.mv-delta.in {
+  background: color-mix(in srgb, var(--in) 15%, transparent);
+  color: var(--in);
+}
+.mv-delta.out {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.mv-name {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.item-history {
+  border-radius: 14px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  padding: 12px 14px;
+}
+.item-history summary {
+  font-weight: 700;
+  font-size: 15px;
+  cursor: pointer;
+}
+.item-history .history {
+  margin-top: 8px;
+}
+.item-history .mv {
+  background: var(--bg);
+}
+.item-history .empty {
+  padding: 16px 8px 4px;
+}
+
+.list {
+  grid-template-columns: minmax(0, 1fr);
+}
+.shop-row {
+  min-width: 0;
+}
+.shop-line {
+  flex-wrap: wrap;
+  padding-left: 0;
+}
+.shop-line .stepper {
+  width: 132px;
+}
+.tabbar svg {
+  display: block;
+}
+.tab-icon {
+  display: block;
+}
+.day ul {
+  grid-template-columns: minmax(0, 1fr);
+}
+.mv {
+  min-width: 0;
 }

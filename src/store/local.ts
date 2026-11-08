@@ -1,4 +1,4 @@
-import { fromLegacy, newId, sortVariants, totalOf, type Item, type ItemInput, type Variant } from '../types';
+import { fromLegacy, newId, sortVariants, totalOf, type Item, type ItemInput, type Movement, type Variant } from '../types';
 import type { InventoryStore, User } from './types';
 
 const KEY = 'cellier.items.v1';
@@ -48,7 +48,8 @@ function write(next: Stored[]) {
   channel?.postMessage('changed');
 }
 
-channel?.addEventListener('message', () => {
+channel?.addEventListener('message', (e) => {
+  if (e.data !== 'changed') return;
   memory = read();
   emit();
 });
@@ -58,6 +59,30 @@ function patchItem(id: string, fn: (s: Stored) => Stored) {
 }
 
 const localUser: User = { name: 'Cet appareil' };
+
+// ---- Historique des mouvements ----
+const HISTORY_KEY = 'cellier.history.v1';
+/** Environ 2 ans d'usage familial ; au-delà, les plus anciennes lignes sont oubliées. */
+const HISTORY_MAX = 5000;
+const historyListeners = new Set<(list: Movement[]) => void>();
+
+function readHistory(): Movement[] {
+  try {
+    return JSON.parse(localStorage.getItem(HISTORY_KEY) ?? '[]') as Movement[];
+  } catch {
+    return [];
+  }
+}
+let history = readHistory();
+
+function emitHistory() {
+  historyListeners.forEach((cb) => cb(history));
+}
+channel?.addEventListener('message', (e) => {
+  if (e.data !== 'history') return;
+  history = readHistory();
+  emitHistory();
+});
 
 export const localStore: InventoryStore = {
   mode: 'local',
@@ -97,6 +122,21 @@ export const localStore: InventoryStore = {
   },
   async removeVariant(item, variantId) {
     patchItem(item.id, (s) => ({ ...s, variants: s.variants.filter((v) => v.id !== variantId) }));
+  },
+  async logMovement(m) {
+    history = [{ ...m, id: newId(), at: Date.now(), by: localUser.name }, ...history].slice(0, HISTORY_MAX);
+    try {
+      localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+    } catch {
+      /* stockage plein */
+    }
+    emitHistory();
+    channel?.postMessage('history');
+  },
+  subscribeHistory(cb) {
+    historyListeners.add(cb);
+    cb(history);
+    return () => historyListeners.delete(cb);
   },
   async importItems(items) {
     write(items.map((i) => normalize({ ...i, id: newId(), updatedAt: Date.now() } as unknown as Record<string, unknown>)));

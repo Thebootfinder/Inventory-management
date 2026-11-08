@@ -21,5 +21,14 @@ service cloud.firestore {
         && request.resource.data.target is number;
       allow delete: if isHousehold();
     }
+
+    // Historique : on peut ajouter des lignes, jamais les modifier.
+    match /movements/{movementId} {
+      allow read: if isHousehold();
+      allow create: if isHousehold()
+        && request.resource.data.delta is number
+        && request.resource.data.uid == request.auth.uid;
+      allow update, delete: if false;
+    }
   }
 }

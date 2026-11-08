@@ -101,3 +101,21 @@ export const DEFAULT_CATEGORIES = [
   'Entretien',
   'Autre',
 ];
+
+export type MovementReason = 'scan' | 'manuel' | 'courses' | 'création' | 'suppression';
+
+/** Une ligne de l'historique : qui a ajouté ou retiré quoi, et quand. */
+export interface Movement {
+  id: string;
+  at: number;
+  itemId: string;
+  itemName: string;
+  variantLabel?: string;
+  category: string;
+  /** Positif = entrée, négatif = sortie. */
+  delta: number;
+  reason: MovementReason;
+  by: string;
+}
+
+export type MovementInput = Omit<Movement, 'id' | 'at' | 'by'>;

@@ -1,4 +1,4 @@
-import type { Item, ItemInput, ItemPatch, Variant } from '../types';
+import type { Item, ItemInput, ItemPatch, Movement, MovementInput, Variant } from '../types';
 
 export interface User {
   name: string;
@@ -25,6 +25,10 @@ export interface InventoryStore {
   addVariant(item: Item, variant: Variant): Promise<void>;
   updateVariant(item: Item, variantId: string, patch: Partial<Omit<Variant, 'id'>>): Promise<void>;
   removeVariant(item: Item, variantId: string): Promise<void>;
+  /** Ajoute une ligne à l'historique des mouvements. */
+  logMovement(m: MovementInput): Promise<void>;
+  /** Écoute l'historique, du plus récent au plus ancien. */
+  subscribeHistory(cb: (list: Movement[]) => void): () => void;
   /** Restaure une sauvegarde (remplace tout en local, ajoute en ligne). */
   importItems(items: ItemInput[]): Promise<void>;
 }

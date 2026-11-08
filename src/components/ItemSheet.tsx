@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { lookupProduct, type ProductInfo } from '../scanner';
 import {
   DEFAULT_CATEGORIES,
@@ -35,6 +35,7 @@ interface Props {
   onAddVariant?: (v: Variant) => Promise<void>;
   onUpdateVariant?: (id: string, patch: Partial<Omit<Variant, 'id'>>) => Promise<void>;
   onRemoveVariant?: (id: string) => Promise<void>;
+  historySlot?: ReactNode;
 }
 
 export function ItemSheet(props: Props) {
@@ -153,6 +154,12 @@ export function ItemSheet(props: Props) {
             )}
           </div>
           <VariantList {...props} item={item} />
+          {props.historySlot && (
+            <details className="item-history">
+              <summary>Derniers mouvements</summary>
+              {props.historySlot}
+            </details>
+          )}
         </>
       )}
 
