@@ -10,6 +10,7 @@ import { ScanView } from './components/ScanView';
 import { BackupPanel } from './components/BackupPanel';
 import { HistoryView } from './components/HistoryView';
 import { ShoppingView } from './components/ShoppingView';
+import { InstallCard, InstallChip } from './components/InstallCard';
 
 type View = 'stock' | 'courses' | 'history' | 'settings';
 type Panel = { kind: 'new'; draft?: NewDraft } | { kind: 'edit'; id: string } | { kind: 'scan' } | null;
@@ -202,7 +203,10 @@ export default function App() {
             <p className="eyebrow">Inventaire</p>
             <h1>Cellier</h1>
           </div>
-          <SyncBadge mode={store.mode} online={online} onClick={() => setView('settings')} />
+          <div className="top-actions">
+            <InstallChip onClick={() => setView('settings')} />
+            <SyncBadge mode={store.mode} online={online} onClick={() => setView('settings')} />
+          </div>
         </div>
 
         {view === 'stock' && (
@@ -383,6 +387,7 @@ function SettingsView({ user, online, items, notify }: { user: User; online: boo
       <div className="section-head">
         <h2>Réglages</h2>
       </div>
+      <InstallCard notify={notify} />
       <div className="card">
         <p className="backup-title">Synchronisation</p>
         <p>
