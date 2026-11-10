@@ -30,5 +30,10 @@ service cloud.firestore {
         && request.resource.data.uid == request.auth.uid;
       allow update, delete: if false;
     }
+
+    // Liste de courses partagée (un seul document : shared/courses).
+    match /shared/{docId} {
+      allow read, write: if isHousehold();
+    }
   }
 }

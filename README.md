@@ -18,8 +18,22 @@ Application web pensée pour le téléphone : on sait à tout moment ce qu'il re
   ce qu'on achète, on ajuste la quantité et la marque, puis « Ranger en stock » met tout à jour d'un coup.
 - **Historique** : chaque entrée et sortie est enregistrée (qui, quoi, quand, comment). Graphique de consommation
   sur 6 mois, top des articles consommés du mois, journal filtrable, et derniers mouvements dans chaque fiche article.
-- **Sauvegarde** : export / restauration de l'inventaire dans un fichier (onglet Réglages).
-- **Installable** sur l'écran d'accueil (PWA), thème clair/sombre automatique.
+- **Sauvegarde** : export / restauration de l'inventaire **et de l'historique** dans un fichier (onglet Réglages),
+  restauration en « fusionner » (sans doublons) ou « remplacer », rappel quand la dernière sauvegarde date.
+- **Courses partagées** : les cases cochées, quantités et prix sont les mêmes sur tous les téléphones, en direct,
+  avec le prénom de qui s'en occupe. Les articles « bientôt vides » d'après la consommation sont proposés.
+- **Scan en rafale** : « Rafale +1 » ou « Rafale −1 » ajoute ou retire à chaque scan, sans carte de validation.
+- **Mode inventaire** : on compte ce qu'il y a réellement, étagère par étagère ; l'app montre les écarts et les corrige d'un coup.
+- **Péremption** : date par référence, pastille « Périme dans 3 j » et filtre « À consommer ».
+- **Fiche vin** : millésime, appellation, couleur, période de dégustation, note et commentaire ; filtre « Vins à boire ».
+- **Prix et budget** : prix par référence (mis à jour depuis les courses), valeur du stock, dépenses du mois.
+- **Plusieurs emplacements** : chaque référence peut avoir son propre emplacement (cave, congélateur…) ;
+  tri et regroupement de la liste par emplacement.
+- **Prévision de rupture** : consommation mensuelle, date de rupture estimée et seuil conseillé dans chaque fiche.
+- **Export tableur** (CSV pour Excel / Google Sheets) de l'inventaire et de l'historique.
+- **Annuler** juste après un +/− par erreur ; indicateur des modifications en attente hors-ligne.
+- **Installable** sur l'écran d'accueil (PWA), thème clair/sombre automatique, démarrage hors-ligne,
+  bandeau « Nouvelle version » quand l'app est mise à jour.
 
 ## Stack
 
@@ -33,6 +47,7 @@ Sans configuration Firebase, l'app fonctionne en **mode local** (données sur l'
 ```bash
 npm install
 npm run dev        # http://localhost:5173 (et l'adresse réseau pour tester sur le téléphone)
+npm test           # tests de la logique (alertes, péremption, prévision, sauvegarde, export)
 ```
 
 > La caméra n'est autorisée par les navigateurs qu'en HTTPS (ou sur localhost). Pour scanner depuis le téléphone,
@@ -45,7 +60,7 @@ npm run dev        # http://localhost:5173 (et l'adresse réseau pour tester sur
 3. **Authentication** › Méthode de connexion › activez **Google**.
    Dans *Paramètres › Domaines autorisés*, ajoutez `thebootfinder.github.io`.
 4. **Paramètres du projet** › *Vos applications* › ajoutez une app Web et copiez la config.
-5. Copiez le contenu de `firestore.rules` dans *Firestore › Règles*, remplacez **dans la console**
+5. Copiez le contenu de `firestore.rules` (il inclut la liste de courses partagée, document `shared/courses`) dans *Firestore › Règles*, remplacez **dans la console**
    `votre.adresse@gmail.com` par les comptes Google de la maison, puis publiez.
    Le dépôt étant public, ne mettez pas vos vraies adresses dans le fichier du dépôt.
 6. En local : copiez `.env.example` en `.env.local` et remplissez les valeurs.

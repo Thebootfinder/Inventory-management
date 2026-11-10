@@ -2,16 +2,26 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { lookupProduct, type ProductInfo } from '../scanner';
 import {
   DEFAULT_CATEGORIES,
+  drinkWindow,
+  euro,
+  expiryState,
+  forecast,
   itemImage,
   newId,
   stockLevel,
+  suggestedTarget,
   variantLabel,
+  WINE_COLORS,
   type Item,
   type ItemInput,
   type ItemPatch,
+  type Movement,
   type Variant,
+  type WineColor,
+  type WineInfo,
 } from '../types';
 import { Icon, ItemThumb } from './Icon';
+import { expiryLabel } from './ItemRow';
 import { Sheet } from './Sheet';
 import { Stepper } from './Stepper';
 
@@ -35,7 +45,137 @@ interface Props {
   onAddVariant?: (v: Variant) => Promise<void>;
   onUpdateVariant?: (id: string, patch: Partial<Omit<Variant, 'id'>>) => Promise<void>;
   onRemoveVariant?: (id: string) => Promise<void>;
+  onSetTarget?: (target: number) => void;
+  history?: Movement[] | null;
   historySlot?: ReactNode;
+}
+
+/** Champs propres à une référence : emplacement, péremption, prix, fiche vin. */
+export interface VariantExtras {
+  location?: string;
+  expiry?: string;
+  price?: number;
+  wine?: WineInfo;
+}
+
+const cleanWine = (w: WineInfo | undefined): WineInfo | undefined => {
+  if (!w) return undefined;
+  const out = Object.fromEntries(Object.entries(w).filter(([, v]) => v !== undefined && v !== '' && !Number.isNaN(v))) as WineInfo;
+  return Object.keys(out).length ? out : undefined;
+};
+
+export function cleanExtras(x: VariantExtras): VariantExtras {
+  return {
+    location: x.location?.trim() || undefined,
+    expiry: x.expiry || undefined,
+    price: x.price && x.price > 0 ? Math.round(x.price * 100) / 100 : undefined,
+    wine: cleanWine(x.wine),
+  };
+}
+
+const numOrUndef = (s: string) => (s.trim() === '' ? undefined : Number(s.replace(',', '.')));
+
+/** Formulaire des champs optionnels d'une référence, repliable pour ne pas encombrer. */
+function ExtrasFields({
+  value,
+  onChange,
+  isWine,
+  open,
+}: {
+  value: VariantExtras;
+  onChange: (v: VariantExtras) => void;
+  isWine: boolean;
+  open?: boolean;
+}) {
+  const w = value.wine ?? {};
+  const setW = (patch: Partial<WineInfo>) => onChange({ ...value, wine: { ...w, ...patch } });
+  const year = new Date().getFullYear();
+  return (
+    <details className="extras" open={open}>
+      <summary>{isWine ? 'Péremption, prix, emplacement, fiche vin' : 'Péremption, prix, emplacement'}</summary>
+      <div className="grid2">
+        <label className="field">
+          <span>À consommer avant</span>
+          <input type="date" value={value.expiry ?? ''} onChange={(e) => onChange({ ...value, expiry: e.target.value || undefined })} />
+        </label>
+        <label className="field">
+          <span>Prix unitaire (€)</span>
+          <input
+            inputMode="decimal"
+            value={value.price ?? ''}
+            onChange={(e) => onChange({ ...value, price: numOrUndef(e.target.value) })}
+            placeholder="Ex. 4,50"
+          />
+        </label>
+      </div>
+      <label className="field">
+        <span>Emplacement de cette référence (si différent de l’article)</span>
+        <input
+          value={value.location ?? ''}
+          onChange={(e) => onChange({ ...value, location: e.target.value })}
+          placeholder="Ex. Cave, Congélateur"
+          list="locations"
+        />
+      </label>
+      {isWine && (
+        <div className="wine-fields">
+          <div className="grid2">
+            <label className="field">
+              <span>Millésime</span>
+              <input inputMode="numeric" value={w.vintage ?? ''} onChange={(e) => setW({ vintage: numOrUndef(e.target.value) })} placeholder={String(year - 3)} />
+            </label>
+            <label className="field">
+              <span>Couleur</span>
+              <select value={w.color ?? ''} onChange={(e) => setW({ color: (e.target.value || undefined) as WineColor | undefined })}>
+                <option value="">—</option>
+                {WINE_COLORS.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+          <label className="field">
+            <span>Appellation</span>
+            <input value={w.appellation ?? ''} onChange={(e) => setW({ appellation: e.target.value || undefined })} placeholder="Ex. Côtes-du-Rhône" />
+          </label>
+          <div className="grid2">
+            <label className="field">
+              <span>À boire à partir de</span>
+              <input inputMode="numeric" value={w.drinkFrom ?? ''} onChange={(e) => setW({ drinkFrom: numOrUndef(e.target.value) })} placeholder={String(year)} />
+            </label>
+            <label className="field">
+              <span>Jusqu’à</span>
+              <input inputMode="numeric" value={w.drinkUntil ?? ''} onChange={(e) => setW({ drinkUntil: numOrUndef(e.target.value) })} placeholder={String(year + 5)} />
+            </label>
+          </div>
+          <div className="field">
+            <span>Note</span>
+            <div className="stars" role="radiogroup" aria-label="Note">
+              {[1, 2, 3, 4, 5].map((n) => (
+                <button
+                  type="button"
+                  key={n}
+                  role="radio"
+                  aria-checked={w.rating === n}
+                  aria-label={`${n} sur 5`}
+                  className={(w.rating ?? 0) >= n ? 'on' : ''}
+                  onClick={() => setW({ rating: w.rating === n ? undefined : n })}
+                >
+                  ★
+                </button>
+              ))}
+            </div>
+          </div>
+          <label className="field">
+            <span>Notes de dégustation</span>
+            <textarea rows={2} value={w.notes ?? ''} onChange={(e) => setW({ notes: e.target.value || undefined })} placeholder="Accords, impressions…" />
+          </label>
+        </div>
+      )}
+    </details>
+  );
 }
 
 export function ItemSheet(props: Props) {
@@ -47,6 +187,7 @@ export function ItemSheet(props: Props) {
   );
   // Champs de la première référence, uniquement à la création.
   const [first, setFirst] = useState({ label: '', barcode: draft?.barcode ?? '', quantity: 1, imageUrl: undefined as string | undefined });
+  const [firstExtras, setFirstExtras] = useState<VariantExtras>({});
   const [looking, setLooking] = useState(false);
   const [saving, setSaving] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -106,6 +247,7 @@ export function ItemSheet(props: Props) {
               quantity: first.quantity,
               imageUrl: first.imageUrl,
               createdAt: Date.now(),
+              ...cleanExtras(firstExtras),
             },
           ],
         });
@@ -153,6 +295,7 @@ export function ItemSheet(props: Props) {
               </div>
             )}
           </div>
+          <Forecast item={item} history={props.history} onSetTarget={props.onSetTarget} />
           <VariantList {...props} item={item} />
           {props.historySlot && (
             <details className="item-history">
@@ -200,6 +343,7 @@ export function ItemSheet(props: Props) {
             <span>Quantité actuelle</span>
             <Stepper value={first.quantity} onChange={(v) => setFirst((f) => ({ ...f, quantity: v }))} big />
           </div>
+          <ExtrasFields value={firstExtras} onChange={setFirstExtras} isWine={group.category === 'Vin'} />
         </>
       )}
 
@@ -258,6 +402,57 @@ export function ItemSheet(props: Props) {
 }
 
 /** Détail des références (marques) d'un article, avec leurs quantités. */
+function variantMeta(v: Variant) {
+  const parts: ReactNode[] = [];
+  if (v.location) parts.push(<span key="l">{v.location}</span>);
+  if (v.expiry) {
+    const st = expiryState(v.expiry);
+    parts.push(
+      <span key="e" className={st === 'expired' ? 'out-text' : st === 'soon' ? 'low-text' : undefined}>
+        {st === 'ok' ? `DLC ${new Date(v.expiry).toLocaleDateString('fr-FR')}` : expiryLabel(v.expiry)}
+      </span>,
+    );
+  }
+  if (v.price) parts.push(<span key="p">{euro(v.price)}</span>);
+  const w = v.wine;
+  if (w?.vintage) parts.push(<span key="v">{w.vintage}</span>);
+  if (w?.rating) parts.push(<span key="r">{'★'.repeat(w.rating)}</span>);
+  const dw = drinkWindow(w);
+  if (dw) parts.push(<span key="d" className={dw === 'ready' ? 'in-text' : dw === 'past' ? 'low-text' : undefined}>{dw === 'ready' ? 'à boire' : dw === 'wait' ? `garder jusqu’en ${w!.drinkFrom}` : 'à boire vite'}</span>);
+  return parts;
+}
+
+/** Rythme de consommation, date de rupture estimée et seuil conseillé, d'après l'historique. */
+function Forecast({ item, history, onSetTarget }: { item: Item; history?: Movement[] | null; onSetTarget?: (t: number) => void }) {
+  if (!history) return null;
+  const f = forecast(item, history);
+  if (!f) return null;
+  const days = Math.round(f.daysLeft);
+  const suggested = suggestedTarget(f.perMonth);
+  const perMonth = f.perMonth >= 10 ? Math.round(f.perMonth) : Math.round(f.perMonth * 10) / 10;
+  return (
+    <div className="forecast card">
+      <div>
+        <span className="muted">Consommation</span>
+        <strong>
+          ~{String(perMonth).replace('.', ',')} / mois
+        </strong>
+      </div>
+      <div>
+        <span className="muted">Rupture estimée</span>
+        <strong className={days <= 7 ? 'out-text' : days <= 21 ? 'low-text' : undefined}>
+          {item.quantity === 0 ? 'déjà' : days > 365 ? '> 1 an' : `dans ~${days} j`}
+        </strong>
+      </div>
+      {onSetTarget && suggested !== item.target && (
+        <button className="btn small ghost" onClick={() => onSetTarget(suggested)}>
+          Seuil conseillé : {suggested}
+        </button>
+      )}
+    </div>
+  );
+}
+
 function VariantList({ item, onAdjust, onAddVariant, onUpdateVariant, onRemoveVariant }: Props & { item: Item }) {
   const [editing, setEditing] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
@@ -273,6 +468,7 @@ function VariantList({ item, onAdjust, onAddVariant, onUpdateVariant, onRemoveVa
           editing === v.id ? (
             <VariantForm
               key={v.id}
+              isWine={item.category === 'Vin'}
               initial={v}
               onCancel={() => setEditing(null)}
               onSave={async (patch) => {
@@ -294,8 +490,9 @@ function VariantList({ item, onAdjust, onAddVariant, onUpdateVariant, onRemoveVa
                 <ItemThumb category={item.category} imageUrl={v.imageUrl} size={38} />
                 <div className="row-text">
                   <div className="variant-name">{v.label.trim() || <span className="muted">Sans précision</span>}</div>
-                  <div className="row-meta">
+                  <div className="row-meta wrap">
                     {v.barcode ? <span className="mono">{v.barcode}</span> : <span>Pas de code-barres</span>}
+                    {variantMeta(v)}
                     <Icon name="edit" size={12} />
                   </div>
                 </div>
@@ -317,13 +514,14 @@ function VariantList({ item, onAdjust, onAddVariant, onUpdateVariant, onRemoveVa
         {adding && (
           <VariantForm
             withQuantity
+            isWine={item.category === 'Vin'}
             onCancel={() => setAdding(false)}
-            onSave={async (patch) => {
+            onSave={async ({ quantity, ...patch }) => {
               await onAddVariant?.({
+                ...patch,
                 id: newId(),
                 label: patch.label ?? '',
-                barcode: patch.barcode,
-                quantity: patch.quantity ?? 0,
+                quantity: quantity ?? 0,
                 createdAt: Date.now(),
               });
               setAdding(false);
@@ -343,24 +541,33 @@ function VariantList({ item, onAdjust, onAddVariant, onUpdateVariant, onRemoveVa
 function VariantForm({
   initial,
   withQuantity,
+  isWine,
   onSave,
   onCancel,
   onDelete,
 }: {
   initial?: Variant;
   withQuantity?: boolean;
-  onSave: (patch: { label?: string; barcode?: string; quantity?: number }) => Promise<void>;
+  isWine: boolean;
+  onSave: (patch: { label?: string; barcode?: string; quantity?: number } & VariantExtras) => Promise<void>;
   onCancel: () => void;
   onDelete?: () => Promise<void>;
 }) {
   const [label, setLabel] = useState(initial?.label ?? '');
   const [barcode, setBarcode] = useState(initial?.barcode ?? '');
   const [quantity, setQuantity] = useState(1);
+  const [extras, setExtras] = useState<VariantExtras>({
+    location: initial?.location,
+    expiry: initial?.expiry,
+    price: initial?.price,
+    wine: initial?.wine,
+  });
   return (
     <li className="variant-form">
       <input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="Marque / précision" autoFocus />
       <input value={barcode} onChange={(e) => setBarcode(e.target.value)} placeholder="Code-barres (optionnel)" inputMode="numeric" />
       {withQuantity && <Stepper value={quantity} onChange={setQuantity} />}
+      <ExtrasFields value={extras} onChange={setExtras} isWine={isWine} />
       <div className="variant-form-actions">
         {onDelete && (
           <button className="btn small ghost danger-text" onClick={onDelete} aria-label="Supprimer cette référence">
@@ -372,7 +579,9 @@ function VariantForm({
         </button>
         <button
           className="btn small primary"
-          onClick={() => onSave({ label: label.trim(), barcode: barcode.trim() || undefined, ...(withQuantity ? { quantity } : {}) })}
+          onClick={() =>
+            onSave({ label: label.trim(), barcode: barcode.trim() || undefined, ...cleanExtras(extras), ...(withQuantity ? { quantity } : {}) })
+          }
         >
           OK
         </button>

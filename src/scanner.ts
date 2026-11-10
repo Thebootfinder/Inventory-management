@@ -54,9 +54,12 @@ export async function startScanner(
     const detector = native;
     let raf = 0;
     let busy = false;
-    const loop = async () => {
+    let last = 0;
+    const loop = async (t: number) => {
       if (stopped) return;
-      if (!busy && video.readyState >= 2) {
+      // ~8 analyses par seconde suffisent et ménagent la batterie (au lieu d'une par image, 60/s).
+      if (!busy && video.readyState >= 2 && t - last > 120) {
+        last = t;
         busy = true;
         try {
           const found = await detector.detect(video);
