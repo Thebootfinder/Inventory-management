@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
-import type { Movement } from '../types';
+import { euro, type Movement } from '../types';
+import { historyCsv, saveFile } from '../lib/csv';
 import { Icon } from './Icon';
 
 const monthKey = (t: number) => {
@@ -21,7 +22,7 @@ const dayLabel = (t: number) => {
 const time = (t: number) => new Date(t).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
 
 /** Une sortie de stock « consommée » (une suppression d'article n'est pas une consommation). */
-const isConsumption = (m: Movement) => m.delta < 0 && m.reason !== 'suppression';
+const isConsumption = (m: Movement) => m.delta < 0 && m.reason !== 'suppression' && m.reason !== 'inventaire';
 
 const REASON: Record<Movement['reason'], string> = {
   scan: 'scan',
@@ -29,9 +30,23 @@ const REASON: Record<Movement['reason'], string> = {
   courses: 'courses',
   création: 'nouvel article',
   suppression: 'article supprimé',
+  inventaire: 'inventaire',
 };
 
-export function HistoryView({ movements, itemId }: { movements: Movement[] | null; itemId?: string }) {
+export function HistoryView({
+  movements,
+  itemId,
+  months: loadedMonths,
+  onMore,
+  notify,
+}: {
+  movements: Movement[] | null;
+  itemId?: string;
+  /** Nombre de mois chargés (journal complet uniquement). */
+  months?: number;
+  onMore?: () => void;
+  notify?: (t: string) => void;
+}) {
   const [filter, setFilter] = useState<'all' | 'out' | 'in'>('all');
   const [month, setMonth] = useState(() => monthKey(Date.now()));
   const [shown, setShown] = useState(itemId ? 10 : 60);
@@ -53,15 +68,17 @@ export function HistoryView({ movements, itemId }: { movements: Movement[] | nul
     const consumed = new Map<string, { name: string; qty: number }>();
     let outQty = 0;
     let inQty = 0;
+    let spent = 0;
     for (const m of inMonth) {
+      if (m.delta > 0 && m.price) spent += m.delta * m.price;
       if (isConsumption(m)) {
         outQty += -m.delta;
         const c = consumed.get(m.itemId) ?? { name: m.itemName, qty: 0 };
         c.qty += -m.delta;
         consumed.set(m.itemId, c);
-      } else if (m.delta > 0) inQty += m.delta;
+      } else if (m.delta > 0 && m.reason !== 'inventaire') inQty += m.delta;
     }
-    return { outQty, inQty, top: [...consumed.values()].sort((a, b) => b.qty - a.qty).slice(0, 5) };
+    return { outQty, inQty, spent, top: [...consumed.values()].sort((a, b) => b.qty - a.qty).slice(0, 5) };
   }, [list, month]);
 
   const journal = list.filter((m) => (filter === 'all' ? true : filter === 'out' ? m.delta < 0 : m.delta > 0));
@@ -80,6 +97,18 @@ export function HistoryView({ movements, itemId }: { movements: Movement[] | nul
         <>
           <div className="section-head">
             <h2>Historique</h2>
+            {list.length > 0 && (
+              <button
+                className="btn small"
+                onClick={async () => {
+                  const file = new File([historyCsv(journal)], `cellier-historique-${new Date().toISOString().slice(0, 10)}.csv`, { type: 'text/csv' });
+                  if (await saveFile(file)) notify?.('Historique exporté');
+                }}
+                aria-label="Exporter l’historique en tableur"
+              >
+                <Icon name="download" size={16} /> CSV
+              </button>
+            )}
           </div>
 
           <div className="card chart-card">
@@ -111,6 +140,12 @@ export function HistoryView({ movements, itemId }: { movements: Movement[] | nul
                 <strong className="in-text">+{monthStats.inQty}</strong>
                 <span className="muted">entrées</span>
               </div>
+              {monthStats.spent > 0 && (
+                <div>
+                  <strong>{euro(monthStats.spent)}</strong>
+                  <span className="muted">dépensés</span>
+                </div>
+              )}
             </div>
             {monthStats.top.length > 0 && (
               <ol className="top-list">
@@ -176,10 +211,18 @@ export function HistoryView({ movements, itemId }: { movements: Movement[] | nul
           <p>Chaque ajout ou retrait apparaîtra ici, avec qui l’a fait et quand.</p>
         </div>
       )}
-      {journal.length > shown && (
+      {journal.length > shown ? (
         <button className="btn small ghost add-ref" onClick={() => setShown((n) => n + 100)}>
           Voir plus
         </button>
+      ) : (
+        onMore &&
+        loadedMonths &&
+        list.length > 0 && (
+          <button className="btn small ghost add-ref" onClick={onMore}>
+            Charger avant {monthLabel(monthKey(new Date(new Date().getFullYear(), new Date().getMonth() - loadedMonths + 1, 1).getTime()), 'long')}
+          </button>
+        )
       )}
     </section>
   );

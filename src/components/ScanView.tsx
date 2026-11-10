@@ -14,6 +14,24 @@ interface Flash {
   tone: 'in' | 'out' | 'warn';
 }
 
+/** Bip court : les iPhone ne vibrent pas depuis une page web, le son confirme la lecture. */
+let audio: AudioContext | null = null;
+function beep() {
+  try {
+    audio ??= new AudioContext();
+    const osc = audio.createOscillator();
+    const gain = audio.createGain();
+    osc.frequency.value = 1400;
+    gain.gain.setValueAtTime(0.08, audio.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.0001, audio.currentTime + 0.09);
+    osc.connect(gain).connect(audio.destination);
+    osc.start();
+    osc.stop(audio.currentTime + 0.1);
+  } catch {
+    /* pas de son disponible */
+  }
+}
+
 const normalize = (s: string) => s.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase();
 
 export function ScanView({
@@ -40,10 +58,26 @@ export function ScanView({
   const [manual, setManual] = useState(false);
   const [code, setCode] = useState('');
   const [pending, setPending] = useState<Pending | null>(null);
+  // Rafale : chaque scan d'un produit connu ajoute (+1) ou retire (−1) directement, sans carte de validation.
+  const [burst, setBurstState] = useState<0 | 1 | -1>(() => {
+    try {
+      return (Number(sessionStorage.getItem('cellier.burst')) || 0) as 0 | 1 | -1;
+    } catch {
+      return 0;
+    }
+  });
+  const setBurst = (b: 0 | 1 | -1) => {
+    setBurstState(b);
+    try {
+      sessionStorage.setItem('cellier.burst', String(b));
+    } catch {
+      /* ignore */
+    }
+  };
 
   // Les callbacks de la caméra lisent toujours l'état le plus récent sans la relancer.
-  const latest = useRef({ items, pending });
-  latest.current = { items, pending };
+  const latest = useRef({ items, pending, burst });
+  latest.current = { items, pending, burst };
   const lastScan = useRef({ code: '', at: 0 });
 
   const handle = (raw: string) => {
@@ -51,12 +85,23 @@ export function ScanView({
     const now = Date.now();
     // Une fiche est ouverte : on n'écoute plus la caméra tant qu'elle n'est pas validée ou annulée.
     if (!value || latest.current.pending) return;
-    // Un même code reste visible plusieurs images de suite : on l'ignore pendant 2,5 s.
-    if (value === lastScan.current.code && now - lastScan.current.at < 2500) return;
+    // Un même code reste visible plusieurs images de suite : on l'ignore un moment
+    // (plus court en rafale, pour enchaîner plusieurs bouteilles identiques).
+    const { burst: b } = latest.current;
+    if (value === lastScan.current.code && now - lastScan.current.at < (b ? 1500 : 2500)) return;
     lastScan.current = { code: value, at: now };
     navigator.vibrate?.(40);
+    beep();
     const found = findByBarcode(latest.current.items, value);
     if (found) {
+      if (b) {
+        if (b < 0 && found.variant.quantity <= 0) {
+          setFlash({ key: now, tone: 'warn', text: `${found.item.name} : plus en stock` });
+          return;
+        }
+        confirm(found.item, found.variant, b);
+        return;
+      }
       setPending({ kind: 'known', itemId: found.item.id, variantId: found.variant.id });
       return;
     }
@@ -170,7 +215,28 @@ export function ScanView({
             {flash.text}
           </div>
         ) : (
-          <p className="scan-help">{error ?? 'Visez un code-barres. Vous validerez l’ajout ou le retrait ensuite.'}</p>
+          <p className="scan-help">
+            {error ??
+              (burst
+                ? `Rafale : chaque produit scanné est ${burst > 0 ? 'ajouté' : 'retiré'} directement.`
+                : 'Visez un code-barres. Vous validerez l’ajout ou le retrait ensuite.')}
+          </p>
+        )}
+
+        {!pending && (
+          <div className="burst glass" role="radiogroup" aria-label="Mode de scan">
+            {(
+              [
+                [0, 'Valider'],
+                [1, 'Rafale +1'],
+                [-1, 'Rafale −1'],
+              ] as const
+            ).map(([v, l]) => (
+              <button key={v} role="radio" aria-checked={burst === v} className={burst === v ? 'on' : ''} onClick={() => setBurst(v)}>
+                {l}
+              </button>
+            ))}
+          </div>
         )}
 
         {!pending &&
