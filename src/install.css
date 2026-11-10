@@ -1,0 +1,57 @@
+.install-card {
+  border-color: color-mix(in srgb, var(--accent) 35%, var(--line));
+}
+.install-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.install-head img {
+  flex: none;
+  border-radius: 12px;
+}
+.install-head > div {
+  min-width: 0;
+}
+.install-steps {
+  margin: 0;
+  padding: 12px 12px 12px 32px;
+  border-radius: 12px;
+  background: var(--surface-2);
+  display: grid;
+  gap: 8px;
+}
+p.install-steps {
+  padding-left: 12px;
+}
+.inline-icon {
+  vertical-align: -3px;
+  color: var(--accent);
+}
+.install-chip {
+  display: inline-flex;
+  align-items: center;
+  height: 32px;
+  border-radius: 99px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 650;
+}
+.install-chip button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 100%;
+  padding: 0 4px 0 12px;
+}
+.install-chip .install-chip-x {
+  padding: 0 10px 0 6px;
+  opacity: 0.7;
+}
+.top-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
